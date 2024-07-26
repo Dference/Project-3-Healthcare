@@ -42,7 +42,7 @@ fetch(medCostPath)
     // console.log(costJson)
 })
 
-// experimenting with adding layers
+// experimenting with adding layers, these are all blank right now
 let deaths = new L.layerGroup();
 let medicalCosts = new L.layerGroup();
 let overlayMaps = {
@@ -52,10 +52,6 @@ let overlayMaps = {
 
 L.control.layers(overlayMaps).addTo(myMap);
 
-// // using $offset= to parse through the data 1000 rows at a time
-// let url = "https://data.cdc.gov/resource/muzy-jte6.json?$offset=1000";
-
-
 
 
 // WORKING WITH THE DATA
@@ -64,23 +60,26 @@ fetch(deathPath)
     .then(data => data.json())
     .then(deathJson => {
     // checking to see if the data got imported right
-    // console.log(deathJson);
+    console.log(deathJson[1]);
+
+    // converting string data to numbers
+    toNumber(deathJson)
 
     // seperating state data only
     stateDataGroupby= sortingYearandState(deathJson);
-    console.log(stateDataGroupby[0])
+    console.log(stateDataGroupby)
+    let data2020 = stateDataGroupby[2020]
 
-    console.log(typeof stateDataGroupby[0].Alabama[0].all_cause)
+    // console.log(data2020.Alabama[0].all_cause)
     
     let sum = 0;
-    // for (let state in stateDataGroupby[0]) {
-    //     sum += stateDataGroupby.state[0].all_cause
-    // }
+    for (state in data2020) {
+        for (week in data2020.Alabama) {
+            sum 
+        }
+    }
 
-
-
-});
-
+    });
 
 // function for creating map, will circle back to later
 function chloroplethMap(deaths) {
@@ -99,6 +98,7 @@ function chloroplethMap(deaths) {
     
 }
 
+// function to sort 
 function sortingYearandState(json) {
     // getting just the state specific data
     let stateData = [];
@@ -113,8 +113,8 @@ function sortingYearandState(json) {
     // the lengths of each year are 2809, 2756, 2756, 1961
     let stateDataByYear = [];
     let stateDataGroupby = [];
-    for (let i = 0, j = 2020; i < 5, j <2024; i++, j++) {
-        stateDataByYear[i] = stateData.filter(year => year.mmwr_year == j);
+    for (let i = 2020; i < 2024; i++) {
+        stateDataByYear[i] = stateData.filter(year => year.mmwr_year == i);
         stateDataGroupby[i] = Object.groupBy(stateDataByYear[i], ({jurisdiction}) => jurisdiction);
     }
     // console.log(stateDataByYear)
@@ -122,3 +122,14 @@ function sortingYearandState(json) {
     return stateDataGroupby;
 }
 
+function toNumber(json) {
+    // for every key that exists
+    for (key in json[0]) {
+        // replace the value of the key with a float, iterating over every index
+        for (i = 0; i < json.length; i++) {
+            if (key != "jurisdiction" && key != "week_end") {
+                json[i][key] = parseFloat(json[i][key])
+            }
+        }
+    }
+}
