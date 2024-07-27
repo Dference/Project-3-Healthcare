@@ -1,5 +1,5 @@
 # Project-3-Healthcare
-  The aim of our project is to identify trends in healthcare outcomes. This project will look at the relationship between healthcare costs and death rates across the United States to find any corralation apparent that could show the following:
+  The aim of our project is to identify trends in healthcare outcomes. This project will look at the relationship between healthcare costs and death rates across the United States to find any correlation apparent that could show the following:
 
 - Do higher mortality rates due to higher chronic illness lead to an increase in healthcare costs by region?
 - Do higher healthcare costs create a higher mortality rate due to inability to obtain proper healthcare?
@@ -7,8 +7,8 @@
 
 # How to use and interact with the project
   For this project, to find answers to our proposed questions, we used the data and visualizations provided with the following thought process:
-- Identify any corralation between the Chronic Causes scatter plot and the Cost by Region heatmap to show increased cost due to increased chronic causes.
-- Identify any corralation between overall mortality rates by states and increased healthcare costs with the Death Rates by State and Healthcare Costs by Region heatmaps.
+- Identify any correlation between the Chronic Causes scatter plot and the Cost by Region heatmap to show increased cost due to increased chronic causes.
+- Identify any correlation between overall mortality rates by states and increased healthcare costs with the Death Rates by State and Healthcare Costs by Region heatmaps.
 - Identify what would be the most cost friendly states when it comes to healthcare coverage by using the Healthcare Costs by Region heatmap.
   
 ## Deliverables
