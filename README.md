@@ -17,7 +17,7 @@
  
 ## User Interaction
 - Dropdowns for death rates by state and healthcare costs by region
-- Git Hub Pages presentation of overall project:
+- Git Hub Pages presentation of overall project: https://dference.github.io/Project-3-Healthcare/Project%203%20Presentation.pptx
 
 ## Ethical Considerations
   For this project, all data used was done so in compliance with HIPAA regulations, with data used following policies from The Department of Health and Human Services (HHS) protecting information from unwarranted disclosure.
