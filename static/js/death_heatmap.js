@@ -1,12 +1,13 @@
 // code for creating a chloropleth of deaths by state
 
+// PROBLEM: need to create a layer for each year, also I have not gotten to the medical cost data yet
 
 // NOTE: I added Puerto Rico to the us-states.json file since the deaths dataset included it, it was not in the original file
 
 // // initializing the map
 let myMap = L.map("map", {
-    center: [39.09, -101.25],
-    zoom: 5
+    center: [41.728983, -102.209124],
+    zoom: 4
   });
   
 // Adding the tile layer
@@ -14,33 +15,34 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(myMap);
 
-// loading in json data
-let stateBoundariesPath = `static/archive/us-states.json`
+// assigning the json paths to variables
+let stateBoundariesPath = `Data/us-states.json`
 let medCostPath = "Data/medical_cost.json"
 let deathPath = "Data/Updated_Deaths_Sheet.json"
 
-// just straight up importing the data
-
-// chloropleth layer
-// fetch(stateBoundariesPath)
-//     .then(response => response.json())
-//     .then(responseJson => {
-//         stateJson = responseJson.features
-//         L.geoJson(stateJson).addTo(myMap);
-//     });
-
-fetch(deathPath)
-    .then(data => data.json())
-    .then(deathJson => {
-    // checking to see if the data got imported right
-    // console.log(deathJson);
-    });
-
+// loading in medical cost data
 fetch(medCostPath)
 .then(response => response.json())
 .then(costJson => {
-    // console.log(costJson)
-})
+    toNumber(costJson); // converting strings to numbers
+    console.log(costJson);
+    
+    let costGroupby = Object.groupBy(costJson, ({region}) => region); //grouping by region
+    console.log(costGroupby);
+
+    // getting the sum of medical costs by region
+    let avgArray = []
+    for (region in costGroupby) {
+        let sum = 0;
+        for (i = 0; i < costGroupby[region].length; i++){
+            sum += costGroupby[region][i].charges;
+        }
+        avgArray.push(sum/costGroupby[region].length); // calculating avg cost per person in each region
+    }
+console.log(avgArray)
+
+    
+}); // this is the end of the fetch medcost data
 
 // experimenting with adding layers, these are all blank right now
 let deaths = new L.layerGroup();
@@ -60,16 +62,17 @@ fetch(deathPath)
     .then(data => data.json())
     .then(deathJson => {
     // checking to see if the data got imported right
-    console.log(deathJson[1]);
+    // console.log(deathJson[1]);
 
     // converting string data to numbers
     toNumber(deathJson);
 
     // seperating state data only
     // remember that this returns an array of arrays
-    stateDataGroupby= sortingYearandState(deathJson);
-    console.log(stateDataGroupby)
+    let stateDataGroupby = sortingYearandState(deathJson);
+    // console.log(stateDataGroupby)
 
+    // this next part is going to be tedious
     // creating empty lists to hold the data for types of death
     let allDeaths2020 = [];
     let allDeaths2021 = [];
@@ -82,7 +85,7 @@ fetch(deathPath)
     arrayOfDeaths(stateDataGroupby[2022], allDeaths2022);
     arrayOfDeaths(stateDataGroupby[2023], allDeaths2023);
 
-    console.log(allDeaths2020)
+    // console.log(allDeaths2020)
    
     // chloropleth layer
 fetch(stateBoundariesPath)
@@ -90,15 +93,15 @@ fetch(stateBoundariesPath)
     .then(responseJson => {
         let stateJson = responseJson.features;  // narrowing down to just responses for simplicity
     L.geoJson(stateJson).addTo(myMap);          // adding the polygon layer to the map
-cd 
+ 
         // adding the values we got from the death and medical cost array to the geojson file so it will be easier to create the popups
         // both the death json and states json are in alphabetical order (except with pr at the end) so the values match up
-        addingKeys(stateJson, allDeaths2020, "2020")
-        addingKeys(stateJson, allDeaths2021, "2021")
-        addingKeys(stateJson, allDeaths2022, "2022")
-        addingKeys(stateJson, allDeaths2023, "2023")
+        addingKeys(stateJson, allDeaths2020, "2020");
+        addingKeys(stateJson, allDeaths2021, "2021");
+        addingKeys(stateJson, allDeaths2022, "2022");
+        addingKeys(stateJson, allDeaths2023, "2023");
 
-        console.log(stateJson)
+        // console.log(stateJson)
 
 
 
@@ -109,13 +112,13 @@ cd
                 `<h1 style='text-align: center'> ${feature.properties.name}</h1>
                 <br><h2> Total Deaths in 2020: ${feature.properties[2020].all_cause} </h2>`
             )}
-        }).addTo(myMap)
+        }).addTo(myMap);
 
 
-    });
+    }); // this is the end of the fetch state data
 
 
-    });
+    }); //this is the end of the fetch death data
 
 // function for creating map, will circle back to later
 function chloroplethMap(deaths) {
@@ -164,8 +167,10 @@ function toNumber(json) {
     for (key in json[0]) {
         // replace the value of the key with a float, iterating over every index
         for (i = 0; i < json.length; i++) {
-            if (key != "jurisdiction" && key != "week_end") {
-                json[i][key] = parseFloat(json[i][key])
+            if (key != "jurisdiction" && key != "week_end" // NaN keys in med death json
+                && key != "region" && key != "sex" && key != "smoker") // NaN keys in cost json
+            {
+                json[i][key] = parseFloat(json[i][key]);
             }
         }
     }
@@ -180,8 +185,7 @@ function costSums(yearArray, costCategory) {
         // and every week of data that was collected
         // we're using Alabama here because its the first state in the data set and all the states have the same number of recorded weeks
         for (week in yearArray.Alabama) {
-            // summing up
-            sum += yearArray[state][week][costCategory]
+            sum += yearArray[state][week][costCategory] // summing up
         }
         sumArray.push(sum)
     }
