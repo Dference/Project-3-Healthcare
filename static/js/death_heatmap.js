@@ -24,7 +24,7 @@ let deathPath = "Data/Updated_Deaths_Sheet.json"
 var selectedButton;
 
 // experimenting with adding layers, these are all blank right now
-let deaths = new L.featureGroup();
+// let deaths = new L.featureGroup();
 // let years = ['2020', '2021', '2022', '2023']
 let medicalCosts = new L.layerGroup();
 // var year1 = '2020';
@@ -37,29 +37,14 @@ let year2 = new L.layerGroup();
 let year3 = new L.layerGroup();
 let year4 = new L.layerGroup();
 let overlayMaps = {
-    Deaths: deaths,
     "2020" : year1,
-    "Medical Costs": medicalCosts
+    "2021" : year2,
+    "2022" : year3,
+    "2023" : year4
 }
 
 
 L.control.layers(overlayMaps).addTo(myMap);
-
-var myYear = document.querySelector('input[name="leaflet-base-layers_51"]');
-console.log('Caught dom element',myYear );
-myYear.addEventListener('click', 
-        function() {
-            selectedButton = "deaths";
-            console.log(selectedButton);
-        }
-    )
-
-// myYear.on('click', function(ev){
-//         console.log('Deaths clicked');
-//         selectedYear = 'deaths';
-//     })
-
-// myYear.addEventListener
 
 // loading in medical cost data
 fetch(medCostPath)
@@ -132,23 +117,38 @@ fetch(stateBoundariesPath)
 
         console.log(stateJson);
 
-        var myYear = document.querySelector('input[name="leaflet-base-layers_51"]');
-        console.log('Caught dom element',myYear );
-        myYear.addEventListener('click', 
-                function() {
-                    selectedButton = "deaths";
-                    console.log(selectedButton);
-                    L.geoJSON(stateJson, {
-                        onEachFeature: (feature, layer) => {
-                        layer.bindPopup(
-                            `
-                            <h1 style='text-align: center'> ${feature.properties.name}</h1>
-                            <br><h2> Total Deaths in 2020: ${feature.properties[2020].all_cause} </h2>
-                            <br><h2> Total deaths in selected year: ${selectedButton}</h2>`
-                        )}
-                    }).addTo(myMap);
-                }
-            )
+        
+        var radioButtons = document.querySelectorAll('input[name="leaflet-base-layers_51"]');
+radioButtons.forEach(radio => {
+    radio.addEventListener('click', function () {
+        selectedButton = this.nextElementSibling.textContent.trim();
+        console.log(selectedButton);
+        L.geoJSON(stateJson, {
+            onEachFeature: (feature, layer) => {
+            layer.bindPopup(
+                `
+                <h1 style='text-align: center'> ${feature.properties.name}</h1>
+                <br><h2> Total Deaths in ${selectedButton}: ${feature.properties[selectedButton].all_cause} </h2>`
+            )}
+        }).addTo(myMap);
+    })
+})
+
+        // myYear.addEventListener('click', 
+        //         function() {
+        //             selectedButton = "deaths";
+        //             console.log(selectedButton);
+        //             L.geoJSON(stateJson, {
+        //                 onEachFeature: (feature, layer) => {
+        //                 layer.bindPopup(
+        //                     `
+        //                     <h1 style='text-align: center'> ${feature.properties.name}</h1>
+        //                     <br><h2> Total Deaths in 2020: ${feature.properties[2020].all_cause} </h2>
+        //                     <br><h2> Total deaths in selected year: ${selectedButton}</h2>`
+        //                 )}
+        //             }).addTo(myMap);
+        //         }
+        //     )
 
         // L.geoJSON(stateJson, {
         //     onEachFeature: (feature, layer) => {
