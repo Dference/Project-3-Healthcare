@@ -1,8 +1,8 @@
 // code for creating a chloropleth of deaths by state
 
-// PROBLEM: need to create a layer for each year, also I have not gotten to the medical cost data yet
+// PROBLEM: need to adjust death numbers by population
 
-// NOTE: I added Puerto Rico to the us-states.json file since the deaths dataset included it, it was not in the original file
+// NOTE: I added DC, NYC, and Puerto Rico to the us-states.json file since the deaths dataset included it, it was not in the original file
 
 // // initializing the map
 let myMap = L.map("map", {
@@ -20,18 +20,10 @@ let stateBoundariesPath = `Data/us-states.json`
 let medCostPath = "Data/medical_cost.json"
 let deathPath = "Data/Updated_Deaths_Sheet.json"
 
-
+// declaring a global variable so that the event listener will work later
 var selectedButton;
 
-// experimenting with adding layers, these are all blank right now
-// let deaths = new L.featureGroup();
-// let years = ['2020', '2021', '2022', '2023']
-let medicalCosts = new L.layerGroup();
-// var year1 = '2020';
-// var year2 = '2021';
-// var year3 = '2022';
-// var year4 = '2023';
-
+// adding layers to display data for different years
 let year1 = new L.layerGroup();
 let year2 = new L.layerGroup();
 let year3 = new L.layerGroup();
@@ -42,8 +34,6 @@ let overlayMaps = {
     "2022" : year3,
     "2023" : year4
 }
-
-
 L.control.layers(overlayMaps).addTo(myMap);
 
 // loading in medical cost data
@@ -84,7 +74,7 @@ fetch(deathPath)
     // seperating state data only
     // remember that this returns an array of arrays
     let stateDataGroupby = sortingYearandState(deathJson);
-    // console.log(stateDataGroupby)
+    console.log(stateDataGroupby)
 
     // this next part is going to be tedious
     // creating empty lists to hold the data for types of death
@@ -118,72 +108,54 @@ fetch(stateBoundariesPath)
         console.log(stateJson);
 
         
-        var radioButtons = document.querySelectorAll('input[name="leaflet-base-layers_51"]');
-radioButtons.forEach(radio => {
-    radio.addEventListener('click', function () {
-        selectedButton = this.nextElementSibling.textContent.trim();
-        console.log(selectedButton);
-        L.geoJSON(stateJson, {
-            onEachFeature: (feature, layer) => {
-            layer.bindPopup(
-                `
-                <h1 style='text-align: center'> ${feature.properties.name}</h1>
-                <br><h2> Total Deaths in ${selectedButton}: ${feature.properties[selectedButton].all_cause} </h2>`
-            )}
-        }).addTo(myMap);
-    })
-})
-
-        // myYear.addEventListener('click', 
-        //         function() {
-        //             selectedButton = "deaths";
-        //             console.log(selectedButton);
-        //             L.geoJSON(stateJson, {
-        //                 onEachFeature: (feature, layer) => {
-        //                 layer.bindPopup(
-        //                     `
-        //                     <h1 style='text-align: center'> ${feature.properties.name}</h1>
-        //                     <br><h2> Total Deaths in 2020: ${feature.properties[2020].all_cause} </h2>
-        //                     <br><h2> Total deaths in selected year: ${selectedButton}</h2>`
-        //                 )}
-        //             }).addTo(myMap);
-        //         }
-        //     )
-
-        // L.geoJSON(stateJson, {
-        //     onEachFeature: (feature, layer) => {
-        //     layer.bindPopup(
-        //         `
-        //         <h1 style='text-align: center'> ${feature.properties.name}</h1>
-        //         <br><h2> Total Deaths in 2020: ${feature.properties[2020].all_cause} </h2>
-        //         <br><h2> Total deaths in selected year: ${selectedButton}</h2>`
-        //     )}
-        // }).addTo(myMap);
-
+        var radioButtons = document.querySelectorAll('input[name="leaflet-base-layers_51"]'); // the html tag for the radio buttons, creates an array w each radio button inside
+    radioButtons.forEach(radio => {
+        radio.addEventListener('click', function () {
+            selectedButton = this.nextElementSibling.textContent.trim(); // getting the name of the button
+            choroplethMap(responseJson, selectedButton);
+        })
+    }); // this is the end of the addEventListener code
 
     }); // this is the end of the fetch state data
 
 
     }); //this is the end of the fetch death data
 
-// function for creating map, will circle back to later
-function chloroplethMap(deaths) {
-
-    // initializing the map
-    let myMap = L.map("map", {
-        center: [39.09, -101.25],
-        zoom: 5
-        // layers: [whatever]
-      });
-      
-    // Adding the tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+// function for creating a choropleth map, to be used in the event listener
+function choroplethMap(geojson, selectedButton) {
+    choroplethLayer = L.choropleth(geojson, {
+        valueProperty: feature => feature.properties[selectedButton].all_cause,
+        scale: ["#ffffb2", "#b10026"],
+        steps: 7,
+        mode: 'q',
+        style: {
+            color: '#fff',
+            weight: 2,
+            fillOpacity: 0.8
+        },
+        onEachFeature: (feature, layer) => {    // changing the popup based on which button is selected
+            layer.bindPopup(
+                `<h1 style='text-align: center'> ${feature.properties.name}</h1>
+                <br><h2> Total Deaths in ${selectedButton}: ${feature.properties[selectedButton].all_cause} </h2>`
+            )}
     }).addTo(myMap);
-    
+}
+// function that converts string values to numbers
+function toNumber(json) {
+    // for every key that exists
+    for (key in json[0]) {
+        // replace the value of the key with a float, iterating over every index
+        for (i = 0; i < json.length; i++) {
+            if (key != "jurisdiction" && key != "week_end" // NaN keys in med death json
+                && key != "region" && key != "sex" && key != "smoker") // NaN keys in cost json
+            {
+                json[i][key] = parseFloat(json[i][key]);
+            }
+        }
+    }
 }
 
-// function to sort 
+// function to sort data by year and then by state
 function sortingYearandState(json) {
     // getting just the state specific data
     let stateData = [];
@@ -205,21 +177,6 @@ function sortingYearandState(json) {
     // 4 arrays for each year, 50 arrays in each for every state, and x amount of weeks per state
     // yes this will make indexing a pain, but that's what for loops are for
     return stateDataGroupby;
-}
-
-// function that converts string values to numbers
-function toNumber(json) {
-    // for every key that exists
-    for (key in json[0]) {
-        // replace the value of the key with a float, iterating over every index
-        for (i = 0; i < json.length; i++) {
-            if (key != "jurisdiction" && key != "week_end" // NaN keys in med death json
-                && key != "region" && key != "sex" && key != "smoker") // NaN keys in cost json
-            {
-                json[i][key] = parseFloat(json[i][key]);
-            }
-        }
-    }
 }
 
 // function that sums up the costs for each year and category
