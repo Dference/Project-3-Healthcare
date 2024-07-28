@@ -20,15 +20,56 @@ let stateBoundariesPath = `Data/us-states.json`
 let medCostPath = "Data/medical_cost.json"
 let deathPath = "Data/Updated_Deaths_Sheet.json"
 
+
+var selectedButton;
+
+// experimenting with adding layers, these are all blank right now
+let deaths = new L.featureGroup();
+// let years = ['2020', '2021', '2022', '2023']
+let medicalCosts = new L.layerGroup();
+// var year1 = '2020';
+// var year2 = '2021';
+// var year3 = '2022';
+// var year4 = '2023';
+
+let year1 = new L.layerGroup();
+let year2 = new L.layerGroup();
+let year3 = new L.layerGroup();
+let year4 = new L.layerGroup();
+let overlayMaps = {
+    Deaths: deaths,
+    "2020" : year1,
+    "Medical Costs": medicalCosts
+}
+
+
+L.control.layers(overlayMaps).addTo(myMap);
+
+var myYear = document.querySelector('input[name="leaflet-base-layers_51"]');
+console.log('Caught dom element',myYear );
+myYear.addEventListener('click', 
+        function() {
+            selectedButton = "deaths";
+            console.log(selectedButton);
+        }
+    )
+
+// myYear.on('click', function(ev){
+//         console.log('Deaths clicked');
+//         selectedYear = 'deaths';
+//     })
+
+// myYear.addEventListener
+
 // loading in medical cost data
 fetch(medCostPath)
 .then(response => response.json())
 .then(costJson => {
     toNumber(costJson); // converting strings to numbers
-    console.log(costJson);
+    // console.log(costJson);
     
     let costGroupby = Object.groupBy(costJson, ({region}) => region); //grouping by region
-    console.log(costGroupby);
+    // console.log(costGroupby);
 
     // getting the sum of medical costs by region
     let avgArray = []
@@ -39,22 +80,10 @@ fetch(medCostPath)
         }
         avgArray.push(sum/costGroupby[region].length); // calculating avg cost per person in each region
     }
-console.log(avgArray)
+// console.log(avgArray)
 
     
 }); // this is the end of the fetch medcost data
-
-// experimenting with adding layers, these are all blank right now
-let deaths = new L.layerGroup();
-let medicalCosts = new L.layerGroup();
-let overlayMaps = {
-    Deaths: deaths,
-    "Medical Costs": medicalCosts
-}
-
-L.control.layers(overlayMaps).addTo(myMap);
-
-
 
 // WORKING WITH THE DATA
 stateDataGroupby = []
@@ -62,7 +91,7 @@ fetch(deathPath)
     .then(data => data.json())
     .then(deathJson => {
     // checking to see if the data got imported right
-    // console.log(deathJson[1]);
+    // console.log(deathJson);
 
     // converting string data to numbers
     toNumber(deathJson);
@@ -101,18 +130,35 @@ fetch(stateBoundariesPath)
         addingKeys(stateJson, allDeaths2022, "2022");
         addingKeys(stateJson, allDeaths2023, "2023");
 
-        // console.log(stateJson)
+        console.log(stateJson);
 
+        var myYear = document.querySelector('input[name="leaflet-base-layers_51"]');
+        console.log('Caught dom element',myYear );
+        myYear.addEventListener('click', 
+                function() {
+                    selectedButton = "deaths";
+                    console.log(selectedButton);
+                    L.geoJSON(stateJson, {
+                        onEachFeature: (feature, layer) => {
+                        layer.bindPopup(
+                            `
+                            <h1 style='text-align: center'> ${feature.properties.name}</h1>
+                            <br><h2> Total Deaths in 2020: ${feature.properties[2020].all_cause} </h2>
+                            <br><h2> Total deaths in selected year: ${selectedButton}</h2>`
+                        )}
+                    }).addTo(myMap);
+                }
+            )
 
-
-
-        L.geoJSON(stateJson, {
-            onEachFeature: (feature, layer) => {
-            layer.bindPopup(
-                `<h1 style='text-align: center'> ${feature.properties.name}</h1>
-                <br><h2> Total Deaths in 2020: ${feature.properties[2020].all_cause} </h2>`
-            )}
-        }).addTo(myMap);
+        // L.geoJSON(stateJson, {
+        //     onEachFeature: (feature, layer) => {
+        //     layer.bindPopup(
+        //         `
+        //         <h1 style='text-align: center'> ${feature.properties.name}</h1>
+        //         <br><h2> Total Deaths in 2020: ${feature.properties[2020].all_cause} </h2>
+        //         <br><h2> Total deaths in selected year: ${selectedButton}</h2>`
+        //     )}
+        // }).addTo(myMap);
 
 
     }); // this is the end of the fetch state data
