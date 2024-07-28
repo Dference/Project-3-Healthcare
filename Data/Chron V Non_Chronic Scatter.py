@@ -3,20 +3,26 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 
-# Read from CSV file into DataFrame
+# Read the Mortality CSV file into a DataFrame
 df = pd.read_csv('Updated_Deaths_Sheet.csv')
 
 # Print DataFrame to check data
 print(df.head())
 
-# Use Seaborn to create a scatter plot of Chron_Cause vs Non_Chron_Causes
-plt.figure(figsize=(10, 6))
-sns.scatterplot(data=df, x=df['chron_causes'], y=df['non_chron_causes'])
+# Remove rows 'United States'
+updated_df = df[df['jurisdiction']!='United States']
+
+# Print DataFrame after dropped rows
+print(updated_df.head())
+
+# Use Seaborn to create a scatter plot of Chron_Cause vs Jurisdiction
+plt.figure(figsize=(10, 10))
+sns.scatterplot(data=updated_df, x=updated_df['chron_causes'], y=updated_df['jurisdiction'])
 
 # Add titles and labels
-plt.title('Chron_Cause vs Non_Chron_Causes')
-plt.xlabel('Chron_Cause')
-plt.ylabel('Non_Chron_Causes')
+plt.title('Chronic Causes by Jurisidiction')
+plt.xlabel('Chronic Causes')
+plt.ylabel('Jurisidiction')
 
-# Show plot
-plt.savefig('scatter.png')
+# Save the chart locally
+plt.savefig('scatter_plot.png')
