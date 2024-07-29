@@ -4,7 +4,7 @@
 // PROBLEM: click events don't occur unless you open the console on the side and refresh the page?
 
 // NOTE: I added DC, NYC, and Puerto Rico to the us-states.json file since the deaths dataset included it, it was not in the original file
-// document.addEventListener('DOMContentLoaded', function() {
+
 // assigning the json paths to variables
     let stateBoundariesPath = `Data/us-states.json`
     let deathPath = "Data/Updated_Deaths_Sheet.json"
@@ -103,7 +103,7 @@ Promise.all([
     }).catch(error => console.error('Error fetching data:', error));  // this is the end of the promise.all
 
     myMap.invalidateSize();
-// });
+
 // FUNCTIONS USED IN THE CODE ABOVE
 
 // function for creating a choropleth map, to be used in the event listener
@@ -145,12 +145,12 @@ function choroplethMap(geojson, selectedButton) {
                     <tr>
                         <td class="tg-0lax">Chronic Causes</td>
                         <td class="tg-0lax">${feature.properties[selectedButton].chron_causes}</td>
-                        <td class="tg-0lax">${feature.properties[selectedButton].chron_causes / feature.properties[selectedButton].all_cause}</td>
+                        <td class="tg-0lax">${(feature.properties[selectedButton].chron_causes / feature.properties[selectedButton].all_cause * 100).toFixed(2)}%</td>
                     </tr>
                     <tr>
                         <td class="tg-0lax">Non-Chronic Causes</td>
                         <td class="tg-0lax">${feature.properties[selectedButton].non_chron_causes}</td>
-                        <td class="tg-0lax">${feature.properties[selectedButton].non_chron_causes / feature.properties[selectedButton].all_cause}</td>
+                        <td class="tg-0lax">${(feature.properties[selectedButton].non_chron_causes / feature.properties[selectedButton].all_cause * 100).toFixed(2)}%</td>
                     </tr>
                     </tbody>
                     </table>`
