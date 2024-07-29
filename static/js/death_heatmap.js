@@ -1,10 +1,10 @@
 // code for creating a chloropleth of deaths by state
 
 // PROBLEM: need to adjust death numbers by population
-// PROBLEM: click events don't occur unless you refresh the page?
+// PROBLEM: click events don't occur unless you open the console on the side and refresh the page?
 
 // NOTE: I added DC, NYC, and Puerto Rico to the us-states.json file since the deaths dataset included it, it was not in the original file
-
+// document.addEventListener('DOMContentLoaded', function() {
 // assigning the json paths to variables
     let stateBoundariesPath = `Data/us-states.json`
     let deathPath = "Data/Updated_Deaths_Sheet.json"
@@ -16,7 +16,7 @@
     let myMap = L.map("map", {
         center: [41.728983, -102.209124],
         zoom: 4
-    }).invalidateSize();
+    });
 
 
     // Adding the tile layer
@@ -37,7 +37,10 @@
         "2022" : year3,
         "2023" : year4
     }
-    L.control.layers(overlayMaps).addTo(myMap);
+    // L.control.layers(overlayMaps).addTo(myMap);
+    L.control.layers(overlayMaps, {}, {
+        collapsed: false
+      }).addTo(myMap);
     stateDataGroupby = []
 
 Promise.all([
@@ -89,7 +92,7 @@ Promise.all([
         console.log(stateJson);
 
         
-        var radioButtons = document.querySelectorAll('input[name="leaflet-base-layers_51"]'); // the html tag for the radio buttons, creates an array w each radio button inside
+        var radioButtons = document.querySelectorAll('input[class="leaflet-control-layers-selector"]'); // the html tag for the radio buttons, creates an array w each radio button inside
     radioButtons.forEach(radio => {
         radio.addEventListener('click', function () {
             selectedButton = this.nextElementSibling.textContent.trim(); // getting the name of the button
@@ -97,8 +100,10 @@ Promise.all([
         })
     }); // this is the end of the addEventListener code fetch
 
-    }); // this is the end of the promise.all
+    }).catch(error => console.error('Error fetching data:', error));  // this is the end of the promise.all
 
+    myMap.invalidateSize();
+// });
 // FUNCTIONS USED IN THE CODE ABOVE
 
 // function for creating a choropleth map, to be used in the event listener
