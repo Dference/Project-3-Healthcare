@@ -1,70 +1,52 @@
 // code for creating a chloropleth of deaths by state
 
 // PROBLEM: need to adjust death numbers by population
+// PROBLEM: click events don't occur unless you refresh the page?
 
 // NOTE: I added DC, NYC, and Puerto Rico to the us-states.json file since the deaths dataset included it, it was not in the original file
 
-// // initializing the map
-let myMap = L.map("map", {
-    center: [41.728983, -102.209124],
-    zoom: 4
-  });
-  
-// Adding the tile layer
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(myMap);
-
 // assigning the json paths to variables
-let stateBoundariesPath = `Data/us-states.json`
-let medCostPath = "Data/medical_cost.json"
-let deathPath = "Data/Updated_Deaths_Sheet.json"
+    let stateBoundariesPath = `Data/us-states.json`
+    let deathPath = "Data/Updated_Deaths_Sheet.json"
 
-// declaring a global variable so that the event listener will work later
-var selectedButton;
+    // declaring a global variable so that the event listener will work later
+    var selectedButton;
+    let choroplethLayer = null;
+    // initializing the map
+    let myMap = L.map("map", {
+        center: [41.728983, -102.209124],
+        zoom: 4
+    }).invalidateSize();
 
-// adding layers to display data for different years
-let year1 = new L.layerGroup();
-let year2 = new L.layerGroup();
-let year3 = new L.layerGroup();
-let year4 = new L.layerGroup();
-let overlayMaps = {
-    "2020" : year1,
-    "2021" : year2,
-    "2022" : year3,
-    "2023" : year4
-}
-L.control.layers(overlayMaps).addTo(myMap);
 
-// loading in medical cost data
-fetch(medCostPath)
-.then(response => response.json())
-.then(costJson => {
-    toNumber(costJson); // converting strings to numbers
-    // console.log(costJson);
-    
-    let costGroupby = Object.groupBy(costJson, ({region}) => region); //grouping by region
-    // console.log(costGroupby);
+    // Adding the tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(myMap);
 
-    // getting the sum of medical costs by region
-    let avgArray = []
-    for (region in costGroupby) {
-        let sum = 0;
-        for (i = 0; i < costGroupby[region].length; i++){
-            sum += costGroupby[region][i].charges;
-        }
-        avgArray.push(sum/costGroupby[region].length); // calculating avg cost per person in each region
+    myMap.invalidateSize();
+
+    // adding layers to display data for different years
+    let year1 = new L.layerGroup();
+    let year2 = new L.layerGroup();
+    let year3 = new L.layerGroup();
+    let year4 = new L.layerGroup();
+    let overlayMaps = {
+        "2020" : year1,
+        "2021" : year2,
+        "2022" : year3,
+        "2023" : year4
     }
-// console.log(avgArray)
+    L.control.layers(overlayMaps).addTo(myMap);
+    stateDataGroupby = []
 
-    
-}); // this is the end of the fetch medcost data
+Promise.all([
+    fetch(deathPath).then(data => data.json()),
+    fetch(stateBoundariesPath).then(response => response.json())
+    ]).then(([deathJson, responseJson]) => {
+
 
 // WORKING WITH THE DATA
-stateDataGroupby = []
-fetch(deathPath)
-    .then(data => data.json())
-    .then(deathJson => {
     // checking to see if the data got imported right
     // console.log(deathJson);
 
@@ -90,11 +72,10 @@ fetch(deathPath)
     arrayOfDeaths(stateDataGroupby[2023], allDeaths2023);
 
     // console.log(allDeaths2020)
+    
    
     // chloropleth layer
-fetch(stateBoundariesPath)
-    .then(response => response.json())
-    .then(responseJson => {
+        
         let stateJson = responseJson.features;  // narrowing down to just responses for simplicity
     L.geoJson(stateJson).addTo(myMap);          // adding the polygon layer to the map
  
@@ -114,17 +95,21 @@ fetch(stateBoundariesPath)
             selectedButton = this.nextElementSibling.textContent.trim(); // getting the name of the button
             choroplethMap(responseJson, selectedButton);
         })
-    }); // this is the end of the addEventListener code
+    }); // this is the end of the addEventListener code fetch
 
-    }); // this is the end of the fetch state data
+    }); // this is the end of the promise.all
 
-
-    }); //this is the end of the fetch death data
+// FUNCTIONS USED IN THE CODE ABOVE
 
 // function for creating a choropleth map, to be used in the event listener
 function choroplethMap(geojson, selectedButton) {
+    // console.log()
+    if (choroplethLayer) {
+        myMap.removeLayer(choroplethLayer);
+    }
+
     choroplethLayer = L.choropleth(geojson, {
-        valueProperty: feature => feature.properties[selectedButton].all_cause,
+        valueProperty: feature => (feature.properties[selectedButton].chron_causes / feature.properties[selectedButton].all_cause),
         scale: ["#ffffb2", "#b10026"],
         steps: 7,
         mode: 'q',
@@ -136,7 +121,34 @@ function choroplethMap(geojson, selectedButton) {
         onEachFeature: (feature, layer) => {    // changing the popup based on which button is selected
             layer.bindPopup(
                 `<h1 style='text-align: center'> ${feature.properties.name}</h1>
-                <br><h2> Total Deaths in ${selectedButton}: ${feature.properties[selectedButton].all_cause} </h2>`
+                <table class="tg"><thead>
+                    <tr>
+                        <th class="tg-0lax"></th>
+                        <th class="tg-0lax">Totals</th>
+                        <th class="tg-0lax">% of All Causes</th>
+                    </tr></thead>
+                    <tbody>
+                    <tr>
+                        <td class="tg-0lax">All Causes</td>
+                        <td class="tg-0lax">${feature.properties[selectedButton].all_cause}</td>
+                    </tr>
+                    <tr>
+                        <td class="tg-0lax">Natural Causes</td>
+                        <td class="tg-0lax">${feature.properties[selectedButton].nat_causes}</td>
+                        <td class="tg-0lax">${(feature.properties[selectedButton].nat_causes / feature.properties[selectedButton].all_cause * 100).toFixed(2)}%</td>
+                    </tr>
+                    <tr>
+                        <td class="tg-0lax">Chronic Causes</td>
+                        <td class="tg-0lax">${feature.properties[selectedButton].chron_causes}</td>
+                        <td class="tg-0lax">${feature.properties[selectedButton].chron_causes / feature.properties[selectedButton].all_cause}</td>
+                    </tr>
+                    <tr>
+                        <td class="tg-0lax">Non-Chronic Causes</td>
+                        <td class="tg-0lax">${feature.properties[selectedButton].non_chron_causes}</td>
+                        <td class="tg-0lax">${feature.properties[selectedButton].non_chron_causes / feature.properties[selectedButton].all_cause}</td>
+                    </tr>
+                    </tbody>
+                    </table>`
             )}
     }).addTo(myMap);
 }
